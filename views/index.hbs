@@ -270,36 +270,3 @@
     </details>
   </div>
 </section>
-
-<!-- ============ CONTACT ============ -->
-<section class="section section-alt" id="contact">
-  <div class="container">
-    <div class="section-head">
-      <h2>Contact</h2>
-      <p>Questions, feedback, or feature ideas — reach out.</p>
-    </div>
-    <div class="grid contact-grid">
-      <div class="card contact-card">
-        <h3>{{config.brand.name}}</h3>
-        <p>Maintained by {{config.brand.owner}}.</p>
-        <p class="muted">
-          <a href="{{config.brand.githubUrl}}" target="_blank" rel="noopener noreferrer">GitHub repository</a>
-        </p>
-      </div>
-
-      {{#if config.brand.businessAddress}}
-      <div class="card contact-card">
-        <h3>Business Address</h3>
-        <p>{{config.brand.businessAddress}}</p>
-      </div>
-      {{/if}}
-
-      {{#if config.brand.contactEmail}}
-      <div class="card contact-card">
-        <h3>Contact Email</h3>
-        <p><a href="mailto:{{config.brand.contactEmail}}">{{config.brand.contactEmail}}</a></p>
-      </div>
-      {{/if}}
-    </div>
-  </div>
-</section>
