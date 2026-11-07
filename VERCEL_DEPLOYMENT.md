@@ -45,12 +45,28 @@ so `robots.txt`, `sitemap.xml` and canonical URLs resolve correctly.
 - `api/index.js` + `vercel.json` are included so the marketing pages can deploy to Vercel.
 - Environment variables are documented in `ENVIRONMENT_VARIABLES.md`.
 
-## Deploying the worker (free-tier options)
+## Deploying the worker (required for downloads)
 
-The worker is a plain Node.js service. Examples of free/cheap always-on hosts: a small
-VPS, a free-tier container host, or a free-tier app platform that keeps a process running.
-Set its `PORT` (default 3200), `ARCHIVE_DIR`, engine limits, and optionally
-`ARCHIVE_UPLOAD_URL` for object-storage archival.
+The worker is the **only** component that may run the Wget engine. It is a plain Node.js
+service that must stay running.
+
+**Option A — container (recommended):** the repo ships `worker/Dockerfile` (Node 20 +
+`wget`). Build and run it on any always-on host (Render, Railway, Fly.io, a VPS, …):
+
+```bash
+docker build -t wd-worker -f worker/Dockerfile .
+docker run --rm -p 3200:3200 \
+  -e WORKER_API_KEY=<shared-secret> \
+  -e WORKER_CORS_ORIGIN=https://<your-app>.vercel.app \
+  -e PORT=3200 \
+  wd-worker
+```
+
+**Option B — plain Node:** clone the repo on a host with `wget` installed, run
+`npm ci --omit=dev`, then `WORKER_API_KEY=<secret> WORKER_CORS_ORIGIN=<vercel-origin> PORT=3200 node worker/server.js`.
+
+Set the worker's `PORT` (default 3200), `ARCHIVE_DIR`, engine limits (`DOWNLOAD_QUOTA`,
+`DOWNLOAD_TIMEOUT_MS`), and optionally `ARCHIVE_UPLOAD_URL` for object-storage archival.
 
 ## Environment variables
 
@@ -69,9 +85,10 @@ See `ENVIRONMENT_VARIABLES.md` for all supported variables. None are secrets; th
 |---|---|
 | Vercel config (`vercel.json`, `api/index.js`) | **Ready for configuration** — single `@vercel/node` function serves the Express app (pages + static assets). |
 | Marketing/SEO pages on Vercel | **Ready** — served by the Express app; all routes verified locally. |
-| Downloader on Vercel | **Requires external worker** — the engine runs in `worker/server.js` (separate always-on host). Never run Wget inside a serverless function. |
-| Worker ↔ frontend connectivity | **Ready for configuration** — set `WORKER_URL` + `WORKER_API_KEY` on Vercel and the worker; the app mounts an authenticated proxy at `/api/jobs`. |
-| Socket.IO client script | **Fixed** — only loaded in classic local mode; omitted in worker-proxy mode (avoids a 404 on Vercel). |
+| Downloader on Vercel | **Requires external worker (mandatory)** — downloads WILL NOT work on Vercel without it. The Wget engine runs in `worker/server.js` (a separate always-on host). Never run Wget inside a serverless function. |
+| Worker ↔ frontend connectivity | **Ready for configuration** — set `WORKER_URL` + `WORKER_API_KEY` on Vercel and the worker; the app mounts an authenticated proxy at `/api/jobs`. The working download link is `/api/jobs/:id/download`, served through the proxy and reachable from the browser without exposing the API key. |
+| Default download mode | **Classic Socket.IO is local-only.** On Vercel the UI must run in worker-proxy mode (`WD_WORKER_PROXY=true`), which is enabled automatically when `WORKER_URL` is set. Without the worker configured, the deployed UI shows a clear connection error instead of silently failing. |
+| Socket.IO client script | Only loaded in classic local mode; omitted in worker-proxy mode (avoids a 404 on Vercel). |
 | Persistent ZIP storage | **Requires external hosting** — worker uses local disk by default; enable `ARCHIVE_UPLOAD_URL` (S3-compatible) for durable storage. |
 | Canonical / sitemap domain | **Requires configuration** — set `PUBLIC_SITE_URL`; until then `sitemap.xml` returns 404 and `robots.txt` omits the Sitemap line. |
 | `TRUST_PROXY` | **Recommended** — set to your proxy IPs so rate-limit client-IP extraction is correct behind Vercel's edge. |

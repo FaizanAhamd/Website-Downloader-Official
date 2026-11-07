@@ -117,10 +117,13 @@
   <script>
     window.WD_API_BASE = "{{config.apiBaseUrl}}";
     window.WD_WORKER_PROXY = {{#if config.worker.enabled}}true{{else}}false{{/if}};
-    // The HTTP download API (POST /api/download) is the default path. It works
-    // in a Vercel serverless function with no Socket.IO client or worker.
-    window.WD_DOWNLOAD_API = {{#if config.worker.enabled}}false{{else}}true{{/if}};
   </script>
+  {{#unless config.worker.enabled}}
+  <!-- Classic Wget + Socket.IO mode (default). The Socket.IO client is only
+       needed here; in worker-proxy mode the downloader uses HTTP polling and
+       the Socket.IO client would 404 on Vercel (no Socket.IO server). -->
+  <script src="/socket.io/socket.io.js"></script>
+  {{/unless}}
   <script src="/js/downloader.js" defer></script>
   <script>
     // Accessible mobile navigation toggle (no dependencies)

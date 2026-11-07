@@ -1,21 +1,22 @@
 /**
  * Website Downloader — frontend logic.
  *
- * Two modes (no Socket.IO dependency):
- *  1. HTTP download API (default): POST /api/download mirrors a small public
- *     site and streams a ZIP back. Works in a Vercel serverless function.
- *  2. Worker polling mode (when window.WD_WORKER_PROXY is true): drives the
- *     authenticated worker proxy via job-status polling (opt-in via WORKER_URL).
- *
- * The UI uses an indeterminate progress bar because no genuine overall
- * percentage is available. No fake progress; no success when the request fails.
+ * Two modes, both driven by the ORIGINAL Wget engine:
+ *  1. Classic Socket.IO mode (default): same-origin. Mirrors the server event
+ *     protocol keyed by a client token:
+ *       { progress: 'Starting' } | { progress: '<wget output>' }
+ *       { progress: 'Converting' } | { progress: 'Completed', file, files }
+ *       { error: '...' }
+ *  2. Worker-polling mode (when window.WD_WORKER_PROXY is true): drives the
+ *     authenticated worker proxy via job-status polling. The worker runs the
+ *     same Wget engine (required for Vercel, where a serverless function cannot
+ *     run Wget).
  */
 (function () {
   'use strict';
 
   var WORKER_PROXY = (typeof window !== 'undefined' && window.WD_WORKER_PROXY === true);
-  var HTTP_API = (typeof window !== 'undefined' && window.WD_DOWNLOAD_API === true);
-  var workerMode = WORKER_PROXY; // false -> HTTP mode (default)
+  var workerMode = WORKER_PROXY;
 
   var form = document.getElementById('download-form');
   var input = document.getElementById('url-input');
@@ -42,11 +43,12 @@
 
   var URL_RE = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
 
+  var socket = null;
+  var token = null;
   var workerJobId = null;
   var workerTimer = null;
-  var activeController = null; // AbortController for the HTTP mode
 
-  /* ---------------- UI state helpers ---------------- */
+  /* ---------------- UI helpers ---------------- */
 
   function setError(text) {
     errorMsg.textContent = text;
@@ -66,7 +68,7 @@
     progressBlock.hidden = false;
     resultBlock.hidden = true;
     clearError();
-    progressBar.classList.add('indeterminate');
+    if (progressBar) progressBar.classList.add('indeterminate');
     cancelBtn.hidden = false;
   }
 
@@ -87,11 +89,36 @@
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  /* ---------------- Shared actions ---------------- */
+  function showFailure(message) {
+    hideProgress();
+    stopPolling();
+    downloadBtn.disabled = false;
+    input.disabled = false;
+    setError(String(message));
+  }
+
+  function showCompleted(file, files) {
+    hideProgress();
+    downloadBtn.disabled = false;
+    input.disabled = false;
+    setFileCount(files || 0);
+    zipNameEl.textContent = file || '';
+    if (file) {
+      zipBtn.href = '/download/' + encodeURIComponent(file);
+      zipBtn.style.display = '';
+      zipBtn.setAttribute('download', file);
+    } else {
+      zipBtn.style.display = 'none';
+    }
+    successMsg.textContent = 'Your ZIP archive is ready.';
+    resultFiles.textContent = (files || 0) + ' files collected. The archive is stored temporarily and removed after download.';
+    resultBlock.hidden = false;
+  }
 
   function resetToIdle() {
     stopPolling();
-    activeController = null;
+    socket = null;
+    token = null;
     input.value = '';
     input.disabled = false;
     downloadBtn.disabled = false;
@@ -105,78 +132,56 @@
     zipNameEl.textContent = '';
   }
 
-  function showFailure(message) {
-    hideProgress();
-    stopPolling();
-    downloadBtn.disabled = false;
-    input.disabled = false;
-    setError(String(message));
+  /* ============ MODE 1: Classic Socket.IO (Wget engine) ============ */
+
+  function handleEvent(evt) {
+    if (!evt) return;
+    if (evt.error) { showFailure(evt.error); return; }
+    if (evt.progress === 'Completed') {
+      showCompleted(evt.file, evt.files);
+      return;
+    }
+    if (evt.progress === 'Converting') {
+      setStatus('Website download complete. Creating ZIP archive…');
+      return;
+    }
+    if (evt.progress === 'Starting') {
+      setStatus('Starting…');
+      return;
+    }
+    // Otherwise this is a live Wget output line.
+    setStatus('Downloading…');
+    appendLog(evt.progress);
   }
 
-  function showCompleted(message, detail) {
-    hideProgress();
-    downloadBtn.disabled = false;
-    input.disabled = false;
-    successMsg.textContent = message;
-    resultFiles.textContent = detail || '';
-    resultBlock.hidden = false;
-    if (resultBlock.scrollIntoView) resultBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  function socketStart(raw) {
+    if (typeof window.io === 'undefined') {
+      showFailure('Connection error: Socket.IO client not loaded.');
+      return;
+    }
+    token = 'dl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    socket = window.io();
+
+    socket.on(token, handleEvent);
+    socket.on('disconnect', function () {
+      // Only treat a disconnect as a failure if a download is still in flight.
+      if (!progressBlock.hidden) {
+        showFailure('Connection to the download engine was lost. Please try again.');
+      }
+    });
+    socket.on('connect_error', function () {
+      showFailure('Could not connect to the download engine. If this is a serverless deployment (e.g. Vercel), an external download worker must be configured before downloads can work.');
+    });
+
+    showProgress();
+    setStatus('Starting…');
+    setFileCount(0);
+    downloadBtn.disabled = true;
+    input.disabled = true;
+    socket.emit('request', { website: raw, token: token });
   }
 
-  /* ============ MODE 1: HTTP download API (default) ============ */
-
-  function triggerBlobDownload(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-  }
-
-  function httpStart(raw) {
-    var controller = new AbortController();
-    activeController = controller;
-
-    fetch('/api/download', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: raw }),
-      signal: controller.signal,
-    })
-      .then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return { error: 'The download failed (HTTP ' + res.status + ').' }; })
-            .then(function (payload) {
-              showFailure(payload.error || 'The download failed (HTTP ' + res.status + ').');
-              return null;
-            });
-        }
-        return res.blob();
-      })
-      .then(function (blob) {
-        if (!blob) return;
-        // The server sets Content-Disposition; the browser honours it, but we
-        // also provide a stable local fallback filename.
-        var filename = 'website-' + Math.floor(Date.now() / 1000) + '.zip';
-        triggerBlobDownload(blob, filename);
-        // In HTTP mode there is no server-side ZIP link; hide that control.
-        zipBtn.style.display = 'none';
-        zipNameEl.textContent = '';
-        showCompleted('Your website archive was downloaded.', 'ZIP saved to your browser’s downloads folder. Only static resources were captured; dynamic or protected content may be missing.');
-      })
-      .catch(function (err) {
-        if (err && err.name === 'AbortError') {
-          showFailure('Download cancelled.');
-          return;
-        }
-        showFailure('Could not reach the download service: ' + (err && err.message ? err.message : 'unknown error'));
-      });
-  }
-
-  /* ============ MODE 2: Worker polling (opt-in) ============ */
+  /* ============ MODE 2: Worker polling (Vercel proxy) ============ */
 
   function stopPolling() {
     if (workerTimer) { clearTimeout(workerTimer); workerTimer = null; }
@@ -188,20 +193,14 @@
       .then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.json(); })
       .then(function (job) {
         if (job.status === 'completed') {
-          hideProgress();
-          downloadBtn.disabled = false;
-          input.disabled = false;
-          zipBtn.style.display = '';
-          zipNameEl.textContent = job.file || '';
-          zipBtn.href = '/api/jobs/' + id + '/download';
-          showCompleted('Your ZIP archive is ready.', (job.files || 0) + ' files collected. The archive is stored temporarily and removed after download.');
+          showCompleted(job.file, job.files);
           return;
         }
         if (job.status === 'failed') { showFailure(job.error || 'Download failed.'); return; }
         if (job.status === 'cancelled') { showFailure('Download cancelled.'); return; }
         if (job.status === 'converting') {
           showProgress();
-          setStatus('Website download completed. Creating ZIP archive…');
+          setStatus('Website download complete. Creating ZIP archive…');
           cancelBtn.hidden = true;
         } else if (job.status === 'running') {
           showProgress();
@@ -246,7 +245,7 @@
     downloadBtn.disabled = true;
     input.disabled = true;
 
-    if (workerMode) { workerStart(raw); } else { httpStart(raw); }
+    if (workerMode) { workerStart(raw); } else { socketStart(raw); }
   }
 
   function submit() {
@@ -276,8 +275,8 @@
       if (workerMode && workerJobId) {
         fetch('/api/jobs/' + workerJobId + '/cancel', { method: 'POST' }).catch(function () {});
         stopPolling();
-      } else if (activeController) {
-        activeController.abort();
+      } else if (socket) {
+        try { socket.emit('cancel', { token: token }); } catch (e) { /* noop */ }
       }
       hideProgress();
       downloadBtn.disabled = false;
@@ -291,10 +290,5 @@
 
   if (input && errorEl) {
     input.addEventListener('input', function () { errorEl.hidden = true; });
-  }
-
-  // Only activate the downloader on pages that actually contain it.
-  if (form && input) {
-    // No Socket.IO connection is needed in either mode.
   }
 })();
