@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>{{title}}</title>
+  <meta name="description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive with Website Downloader." />
+  <meta name="author" content="{{config.brand.owner}}" />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Open Graph + Twitter Card (canonical only when a real public domain is configured) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="{{config.brand.name}}" />
+  <meta property="og:title" content="{{title}}" />
+  <meta property="og:description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive." />
+  <meta property="og:image" content="{{#if config.brand.siteUrl}}{{config.brand.siteUrl}}/favicon.svg{{/if}}" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{title}}" />
+  <meta name="twitter:description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive." />
+  {{#if config.brand.siteUrl}}
+  <meta property="og:url" content="{{config.brand.siteUrl}}" />
+  <link rel="canonical" href="{{config.brand.siteUrl}}" />
+  {{/if}}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <link rel="stylesheet" href="/stylesheets/pages.css" />
+
+  {{#if config.adsense.scriptEnabled}}
+  <!-- Google AdSense loader (only injected when verified & enabled via env) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{config.adsense.clientId}}" crossorigin="anonymous"></script>
+  {{/if}}
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Website Downloader home">
+        <svg class="brand-mark" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8V5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v3" />
+          <path d="M3 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" />
+          <path d="M12 12v8" />
+          <path d="M8.5 14.5L12 11l3.5 3.5" />
+        </svg>
+        <span class="brand-name">{{config.brand.name}}</span>
+      </a>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-nav" aria-expanded="false">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+
+      <nav class="primary-nav" id="primary-nav" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/features">Features</a>
+        <a href="/how-it-works">How It Works</a>
+        <a href="/guides">Guides</a>
+        <a href="/faq">FAQ</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a class="btn btn-primary btn-sm" href="/#downloader">Start Downloading</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {{{body}}}
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <p class="footer-heading">{{config.brand.name}}</p>
+        <p>Mirror publicly accessible websites and download their pages and static resources as a ZIP archive.</p>
+        <p class="muted">Maintained by {{config.brand.owner}}.</p>
+        <p class="muted">
+          <a href="{{config.brand.githubUrl}}" target="_blank" rel="noopener noreferrer">GitHub repository</a>
+        </p>
+      </div>
+      <div>
+        <p class="footer-heading">Explore</p>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/features">Features</a></li>
+          <li><a href="/how-it-works">How It Works</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/faq">FAQ</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-heading">Legal</p>
+        <ul>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="{{config.brand.githubUrl}}/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+          <li><a href="{{config.brand.githubUrl}}/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer">Third-Party Notices</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© {{config.brand.owner}}. Released under the MIT License.</p>
+      <p class="muted">Mirrors only publicly accessible static resources. Content is downloaded for personal, authorized use only.</p>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    window.WD_API_BASE = "{{config.apiBaseUrl}}";
+    window.WD_WORKER_PROXY = {{#if config.worker.enabled}}true{{else}}false{{/if}};
+  </script>
+  {{#unless config.worker.enabled}}
+  <!-- Socket.IO client is only needed in classic local mode. In worker-proxy
+       mode the downloader uses HTTP polling, so loading the Socket.IO client
+       would 404 on Vercel (no Socket.IO server). -->
+  <script src="/socket.io/socket.io.js"></script>
+  {{/unless}}
+  <script src="/js/downloader.js" defer></script>
+  <script>
+    // Accessible mobile navigation toggle (no dependencies)
+    (function () {
+      var btn = document.getElementById('nav-toggle');
+      var nav = document.getElementById('primary-nav');
+      if (!btn || !nav) return;
+      btn.addEventListener('click', function () {
+        var open = nav.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.classList.toggle('active', open);
+      });
+      // Close the menu when a link is chosen (mobile).
+      nav.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () {
+          nav.classList.remove('open');
+          btn.classList.remove('active');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

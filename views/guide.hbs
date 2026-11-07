@@ -1,0 +1,47 @@
+<section class="section page-hero">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <span class="badge badge-primary">Guides</span>
+      <h1>{{guide.title}}</h1>
+      <p>{{guide.subtitle}}</p>
+      <p class="muted">{{guide.readTime}}</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container container-narrow">
+    <div class="prose">
+      <p class="guide-intro">{{guide.intro}}</p>
+      {{#each guide.sections}}
+      <h2>{{heading}}</h2>
+      <p>{{body}}</p>
+      {{/each}}
+
+      <h2>Key takeaways</h2>
+      <ul>
+        {{#each guide.takeaways}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    {{> ad-unit adSlot="1234567893"}}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <h2>More guides</h2>
+    </div>
+    <div class="grid guides-grid">
+      {{#each related}}
+      <a class="card guide-card" href="/guides/{{slug}}">
+        <h3>{{title}}</h3>
+        <p>{{subtitle}}</p>
+        <span class="guide-meta">{{readTime}}</span>
+      </a>
+      {{/each}}
+    </div>
+  </div>
+</section>

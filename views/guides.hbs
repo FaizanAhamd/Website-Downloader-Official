@@ -1,0 +1,18 @@
+<section class="section page-hero">
+  <div class="container">
+    <div class="section-head">
+      <span class="badge badge-primary">Guides</span>
+      <h1>Guides &amp; Resources</h1>
+      <p>Practical, honest explanations about mirroring websites, the technology, and the legal boundaries.</p>
+    </div>
+    <div class="grid guides-grid">
+      {{#each guides}}
+      <a class="card guide-card" href="/guides/{{slug}}">
+        <h3>{{title}}</h3>
+        <p>{{subtitle}}</p>
+        <span class="guide-meta">{{readTime}}</span>
+      </a>
+      {{/each}}
+    </div>
+  </div>
+</section>

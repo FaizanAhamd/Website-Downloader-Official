@@ -1,0 +1,305 @@
+<!-- ============ HERO + DOWNLOADER ============ -->
+<section class="hero" id="home">
+  <div class="container hero-inner">
+
+    <div class="hero-copy">
+      <span class="badge badge-primary">Public Website Mirroring</span>
+      <h1>Mirror Any Public Website. Download It as ZIP.</h1>
+      <p class="hero-sub">
+        Mirror publicly accessible web pages and their linked resources. Download the
+        collected files in one convenient ZIP archive.
+      </p>
+      <ul class="hero-points">
+        <li>Download publicly accessible HTML pages and available assets.</li>
+        <li>Save linked resources for offline browsing.</li>
+        <li>Package downloaded website files into one ZIP archive.</li>
+      </ul>
+    </div>
+
+    <div class="downloader-card" id="downloader">
+      <div class="card-body">
+        <h2 class="card-title">Download a public website</h2>
+        <p class="card-sub">Enter the website URL you want to mirror.</p>
+
+        <form id="download-form" novalidate>
+          <div class="field">
+            <label class="sr-only" for="url-input">Website URL</label>
+            <div class="input-group">
+              <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <input
+                type="url"
+                id="url-input"
+                name="url"
+                placeholder="https://example.com"
+                autocomplete="url"
+                spellcheck="false"
+                aria-describedby="url-error"
+                required
+              />
+            </div>
+            <p class="field-error" id="url-error" role="alert" hidden></p>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="download-btn">
+            Download Website
+          </button>
+        </form>
+
+        <p class="input-note">
+          Only publicly accessible web pages and resources can be mirrored. Private
+          server-side source code and databases cannot be downloaded.
+        </p>
+
+        <!-- Connection status -->
+        <p class="dl-status" id="conn-status" role="status" hidden></p>
+
+        <!-- Progress (downloading / packaging) -->
+        <div class="progress-block" id="progress-block" hidden>
+          <div class="progress-track" id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Download progress">
+            <div class="progress-fill indeterminate" id="progress-bar"></div>
+          </div>
+          <div class="progress-meta">
+            <span class="status-text" id="status-text">Starting…</span>
+            <span class="file-count" id="file-count">0 files</span>
+          </div>
+          <div class="progress-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="cancel-btn" hidden>Cancel Download</button>
+          </div>
+          <pre class="log" id="log" aria-live="polite" aria-label="Download log"></pre>
+        </div>
+
+        <!-- Result (completed) -->
+        <div class="result-block" id="result-block" hidden>
+          <span class="success-icon" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <path d="M22 4L12 14.01l-3-3" />
+            </svg>
+          </span>
+          <p class="success-msg" id="success-msg">Your ZIP archive is ready.</p>
+          <p class="result-files" id="result-files"></p>
+          <p class="result-zip" id="zip-name"></p>
+          <a class="btn btn-success btn-lg btn-block" id="zip-btn" href="#" download>Download ZIP Archive</a>
+          <p class="input-note">The archive is stored temporarily and removed automatically after it is downloaded.</p>
+        </div>
+
+        <!-- Error banner -->
+        <div class="error-banner" id="error-banner" role="alert" hidden>
+          <p class="error-msg" id="error-msg"></p>
+          <button type="button" class="btn btn-ghost btn-sm" id="retry-btn">Try again</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-head">
+      <h2>Features</h2>
+      <p>Everything you need to mirror a public website.</p>
+    </div>
+    <div class="grid cards">
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="M8 13h8M8 17h5" />
+          </svg>
+        </span>
+        <h3>Website HTML Download</h3>
+        <p>Mirror the HTML pages of any publicly accessible website.</p>
+      </div>
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h7l2 2h7v12H4z" />
+            <path d="M9 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM15 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+          </svg>
+        </span>
+        <h3>CSS &amp; JavaScript Resources</h3>
+        <p>Collect linked stylesheets and script files for offline browsing.</p>
+      </div>
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" />
+          </svg>
+        </span>
+        <h3>Images &amp; Assets</h3>
+        <p>Download the images and other static assets used by the page.</p>
+      </div>
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8" />
+            <path d="M1 3h22v5H1z" />
+            <path d="M10 12h4" />
+          </svg>
+        </span>
+        <h3>ZIP Archive Generation</h3>
+        <p>All downloaded files are packaged into a single ZIP archive.</p>
+      </div>
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </span>
+        <h3>Real-Time Download Progress</h3>
+        <p>Watch the mirroring progress live as the site is downloaded.</p>
+      </div>
+
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" />
+            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+          </svg>
+        </span>
+        <h3>Simple User Experience</h3>
+        <p>Enter a URL, click download, and get a ready-to-use ZIP archive.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section section-alt" id="how-it-works">
+  <div class="container">
+    <div class="section-head">
+      <h2>How It Works</h2>
+      <p>Mirror a public website in three simple steps.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <h3>Enter Website URL</h3>
+        <p>Paste the address of a publicly accessible website you want to mirror.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <h3>Download Website Resources</h3>
+        <p>Website Downloader mirrors the HTML pages and linked static resources.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <h3>Download Your ZIP Archive</h3>
+        <p>The collected files are packaged into a ZIP archive, available for a limited time before it is removed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <h2>Frequently Asked Questions</h2>
+      <p>Answers to common questions about mirroring websites.</p>
+    </div>
+
+    <details class="faq-item">
+      <summary>What is Website Downloader?</summary>
+      <div class="faq-body">
+        <p>Website Downloader mirrors publicly accessible static web content — HTML pages, CSS, images and JavaScript files — and packages what it collects into a single ZIP archive you can download.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I download an entire website?</summary>
+      <div class="faq-body">
+        <p>You can mirror the publicly accessible pages and linked static resources of a site. Very large sites may hit the download quota or timeout, in which case you should mirror a smaller portion, such as a single page.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Which website resources are supported?</summary>
+      <div class="faq-body">
+        <p>Publicly accessible HTML pages, stylesheets (CSS), scripts (JavaScript), images and other linked static assets are supported. Private server-side source code and databases are never exposed or downloaded.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I download private or protected websites?</summary>
+      <div class="faq-body">
+        <p>No. Website Downloader can only mirror content that is publicly accessible without authentication. It cannot download private pages, login-protected resources, or content behind payment walls.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Where are downloaded ZIP files available?</summary>
+      <div class="faq-body">
+        <p>Archives are stored temporarily on the server and are deleted automatically after you download them (or after the configured retention period). You must download the ZIP before it expires.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does Website Downloader download backend source code?</summary>
+      <div class="faq-body">
+        <p>No. Only publicly accessible front-end resources are mirrored. The server-side source code, application logic, and database contents of a website cannot be downloaded.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Why might some website content be missing?</summary>
+      <div class="faq-body">
+        <p>Dynamic content that is generated by scripts at runtime, resources loaded behind authentication, or assets blocked by the site's robots.txt may not be captured. Files that fail to download are also skipped.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Is the service free?</summary>
+      <div class="faq-body">
+        <p>Yes, the current version is free to use. Paid plans are planned for the future and will be announced separately.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="section section-alt" id="contact">
+  <div class="container">
+    <div class="section-head">
+      <h2>Contact</h2>
+      <p>Questions, feedback, or feature ideas — reach out.</p>
+    </div>
+    <div class="grid contact-grid">
+      <div class="card contact-card">
+        <h3>{{config.brand.name}}</h3>
+        <p>Maintained by {{config.brand.owner}}.</p>
+        <p class="muted">
+          <a href="{{config.brand.githubUrl}}" target="_blank" rel="noopener noreferrer">GitHub repository</a>
+        </p>
+      </div>
+
+      {{#if config.brand.businessAddress}}
+      <div class="card contact-card">
+        <h3>Business Address</h3>
+        <p>{{config.brand.businessAddress}}</p>
+      </div>
+      {{/if}}
+
+      {{#if config.brand.contactEmail}}
+      <div class="card contact-card">
+        <h3>Contact Email</h3>
+        <p><a href="mailto:{{config.brand.contactEmail}}">{{config.brand.contactEmail}}</a></p>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</section>

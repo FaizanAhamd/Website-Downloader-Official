@@ -1,0 +1,58 @@
+<section class="section page-hero">
+  <div class="container">
+    <div class="section-head">
+      <span class="badge badge-primary">Features</span>
+      <h1>Everything you need to mirror a public website</h1>
+      <p>{{config.brand.name}} gives you a straightforward, secure way to download public site content as a ZIP.</p>
+    </div>
+    <div class="grid cards">
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></span>
+        <h3>Website HTML Download</h3>
+        <p>Mirror the HTML pages of any publicly accessible website.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l2 2h7v12H4z"/><path d="M9 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM15 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></span>
+        <h3>CSS &amp; JavaScript Resources</h3>
+        <p>Collect linked stylesheets and script files for offline browsing.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+        <h3>Images &amp; Assets</h3>
+        <p>Download the images and other static assets used by the page.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span>
+        <h3>ZIP Archive Generation</h3>
+        <p>All downloaded files are packaged into a single ZIP archive.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+        <h3>Real-Time Download Progress</h3>
+        <p>Watch mirroring progress live as the site is downloaded.</p>
+      </div>
+      <div class="card feature-card">
+        <span class="feature-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></span>
+        <h3>Simple User Experience</h3>
+        <p>Enter a URL, click download, and get a ready-to-use ZIP archive.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container container-narrow">
+    <div class="prose">
+      <h2>Built-in safety</h2>
+      <ul>
+        <li>SSRF protection blocks requests to private networks, localhost and link-local addresses.</li>
+        <li>DNS pinning and redirect checks guard against rebinding and cloud metadata endpoints.</li>
+        <li>Download quotas and timeouts stop runaway jobs.</li>
+        <li>Concurrent-job limits keep the service fair under load.</li>
+        <li>ZIP path-traversal checks and secure private storage protect your downloads.</li>
+      </ul>
+      <p>Read more in the <a href="/guides">guides</a> and our <a href="/terms">terms of service</a>.</p>
+    </div>
+    {{> ad-unit adSlot="1234567891"}}
+  </div>
+</section>

@@ -1,0 +1,13 @@
+# ads.txt — Google AdSense
+#
+# IMPORTANT: Ads are DISABLED until the site is verified with Google AdSense.
+# The publisher ID below is a starting configuration value and has NOT been
+# verified against a live AdSense account. Do NOT publish ads or claim Google
+# authorization until you confirm this ID inside your own AdSense account and
+# are approved.
+#
+# Once verified and approved, replace the placeholder line below with the real
+# seller line, e.g.:
+#   google.com, pub-3385240797900631, DIRECT, f08c47fec0942fa0
+#
+# Keep the file consistent with the publisher ID used on the site.

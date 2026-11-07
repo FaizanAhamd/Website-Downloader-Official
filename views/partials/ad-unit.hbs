@@ -1,0 +1,15 @@
+{{#if config.adsense.enabled}}
+{{#if config.adsense.publisherId}}
+<!-- Responsive AdSense unit (only shown when verified & enabled; never placed
+     near downloader controls). -->
+<ins class="adsbygoogle ad-unit"
+     style="display:block"
+     data-ad-client="{{config.adsense.clientId}}"
+     data-ad-slot="{{adSlot}}"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+  (window.adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+{{/if}}
+{{/if}}

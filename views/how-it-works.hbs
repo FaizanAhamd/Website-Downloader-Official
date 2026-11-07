@@ -1,0 +1,60 @@
+<section class="section page-hero">
+  <div class="container">
+    <div class="section-head">
+      <span class="badge badge-primary">How It Works</span>
+      <h1>Mirror a public website in three simple steps</h1>
+      <p>From URL to ZIP — here is the whole flow.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <h3>Enter Website URL</h3>
+        <p>Paste the address of a publicly accessible website you want to mirror.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <h3>Download Website Resources</h3>
+        <p>We mirror the HTML pages and linked static resources.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <h3>Download Your ZIP Archive</h3>
+        <p>The collected files are packaged into a ZIP archive, available for a limited time before it is removed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container container-narrow">
+    <div class="prose">
+      <h2>What happens behind the scenes</h2>
+      <p>
+        Once you submit a public URL, our server validates that it is a real http(s)
+        address and that it does not point to a private network, localhost or a
+        cloud metadata endpoint. It then runs the GNU Wget engine to mirror the page
+        and its linked assets.
+      </p>
+      <p>
+        You see live progress — the actual Wget output and a running file count —
+        over a Socket.IO connection. When the download finishes, the files are
+        compressed into a ZIP archive stored in a private folder.
+      </p>
+      <h2>ZIP retention and deletion</h2>
+      <p>
+        Archives are stored temporarily and are <strong>deleted automatically after
+        a successful download</strong> or after the configured retention period
+        (24 hours by default). They are never served as public static files, so you
+        must download your ZIP before it expires.
+      </p>
+      <h2>Limitations</h2>
+      <p>
+        Only publicly accessible content is mirrored. Dynamic content generated at
+        runtime, resources behind authentication, and assets blocked by robots.txt
+        may be missing. We never claim complete offline functionality for dynamic
+        websites.
+      </p>
+    </div>
+    {{> ad-unit adSlot="1234567892"}}
+  </div>
+</section>
