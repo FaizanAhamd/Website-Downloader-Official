@@ -50,6 +50,10 @@ app.use(function (req, res, next) {
 
 app.use('/', indexRouter);
 
+// Vercel-compatible HTTP download API (streams a ZIP of a bounded static
+// snapshot). Mounted before the 404 catch-all; works locally and on Vercel.
+app.use('/api/download', require('./routes/download-api'));
+
 // Optional server-side worker proxy (authenticated). Mounted before the 404
 // catch-all so public users can use the downloader via their own origin without
 // the worker API key ever reaching browser code.
