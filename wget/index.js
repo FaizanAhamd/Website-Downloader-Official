@@ -237,11 +237,15 @@ module.exports = (emitter, data, onFinished) => {
     // validated config; --span-hosts is only enabled by the operator (for CDN
     // / cross-host requisites), never by default.
     const args = [
-      '-mkEpnp',
-      '--no-if-modified-since',
-      '--quota=' + QUOTA_BYTES,
-      '--max-redirect=' + MAX_REDIRECTS
-    ];
+    '-mkEpnp',
+
+    // Keep Linux production ZIP filenames Windows-compatible.
+    '--restrict-file-names=windows',
+
+    '--no-if-modified-since',
+    '--quota=' + QUOTA_BYTES,
+    '--max-redirect=' + MAX_REDIRECTS
+   ];
     if (MAX_CRAWL_DEPTH > 0) args.push('--level=' + MAX_CRAWL_DEPTH);
     if (ALLOW_CROSS_HOST_REQUISITES) args.push('--span-hosts');
     args.push(target.href);
