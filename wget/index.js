@@ -199,7 +199,17 @@ module.exports = (emitter, data, onFinished) => {
   let cancelled = false;
   let timedOut = false;
   let quotaExceeded = false;
+  // Keep stdout and stderr SEPARATELY (last 100 lines each) so real network
+  // errors on stderr are never lost among stdout progress noise, and so the
+  // final diagnostic log shows exactly what wget reported on each stream.
+  const TAIL_MAX = 100;
+  let stdoutTail = [];
   let stderrTail = [];
+  const keepTail = (buf, text) => {
+    buf.push(...text.split('\n'));
+    if (buf.length > TAIL_MAX) buf.splice(0, buf.length - TAIL_MAX);
+    return buf;
+  };
   let child = null;
   let currentArchive = null;
   let timer = null;
@@ -256,22 +266,29 @@ module.exports = (emitter, data, onFinished) => {
       } catch (err) { /* ignore */ }
     }, WATCHDOG_MS);
 
-    const onWgetData = (chunk) => {
+    // stdout: wget's progress (mirror/link conversion). Streamed live to the
+    // client as progress and kept for the diagnostic tail.
+    const onStdout = (chunk) => {
       const text = chunk.toString();
-      stderrTail = stderrTail.concat(text.split('\n')).slice(-60);
-      const blockedIp = findBlockedIpInOutput(text);
-      if (blockedIp) {
-        if (!settled) {
-          child.kill();
-          fail('Download redirected to a blocked private/internal address (' + blockedIp + ') and was stopped.');
-        }
-        return;
-      }
+      stdoutTail = keepTail(stdoutTail, text);
       send({ progress: text });
     };
-    child.stdout.on('data', onWgetData);
 
-    child.stderr.on('data', onWgetData);
+    // stderr: wget's diagnostics — the authoritative place for DNS errors,
+    // connection failures, resets, TLS problems and redirect destinations.
+    // Scan for blocked IPs (SSRF guard) and keep the tail for final logging.
+    const onStderr = (chunk) => {
+      const text = chunk.toString();
+      stderrTail = keepTail(stderrTail, text);
+      const blockedIp = findBlockedIpInOutput(text);
+      if (blockedIp && !settled) {
+        child.kill();
+        fail('Download redirected to a blocked private/internal address (' + blockedIp + ') and was stopped.');
+      }
+    };
+
+    child.stdout.on('data', onStdout);
+    child.stderr.on('data', onStderr);
 
     child.on('error', (err) => {
       if (err.code === 'ENOENT') {
@@ -281,7 +298,15 @@ module.exports = (emitter, data, onFinished) => {
       fail('Could not start the download: ' + err.message);
     });
 
-    child.on('close', async (code) => {
+    child.on('close', async (code, signal) => {
+      // Structured diagnostic log: exit code, signal, and the SEPARATE stdout /
+      // stderr tails. This is the primary tool for diagnosing network failures
+      // (DNS, connect, reset, TLS, redirects) that wget reports on stderr.
+      console.log('[job ' + jobRef + '] WGET EXIT CODE: ' + code);
+      console.log('[job ' + jobRef + '] WGET SIGNAL: ' + (signal || 'none'));
+      console.log('[job ' + jobRef + '] WGET STDOUT (tail ' + stdoutTail.length + ' lines):\n' + stdoutTail.join('\n'));
+      console.log('[job ' + jobRef + '] WGET STDERR (tail ' + stderrTail.length + ' lines):\n' + stderrTail.join('\n'));
+
       if (settled) return;
       clearTimeout(timer);
       clearInterval(watchdog);
@@ -304,10 +329,13 @@ module.exports = (emitter, data, onFinished) => {
       }
 
       const fileCount = await countFiles(jobDir);
+      const dirSize = await sizeOfDir(jobDir).catch(() => 0);
+      console.log('[job ' + jobRef + '] DOWNLOADED FILE COUNT: ' + fileCount);
+      console.log('[job ' + jobRef + '] DOWNLOAD DIRECTORY SIZE: ' + formatBytes(dirSize));
 
       if (fileCount === 0) {
         fail('Nothing could be downloaded from ' + target.hostname + '. ' +
-          explainFailure(stderrTail, code));
+          explainFailure(stdoutTail, stderrTail, code));
         return;
       }
 
@@ -315,7 +343,7 @@ module.exports = (emitter, data, onFinished) => {
       // Any other non-zero exit means the mirror is incomplete -> NOT success.
       if (code !== 0 && code !== 8) {
         fail('wget exited with code ' + code + ' after saving only part of the site. ' +
-          explainFailure(stderrTail, code));
+          explainFailure(stdoutTail, stderrTail, code));
         return;
       }
 
@@ -373,33 +401,56 @@ function parseTarget(input) {
   return url;
 }
 
-function explainFailure(lines, exitCode) {
-  const text = (Array.isArray(lines) ? lines.join('\n') : String(lines || '')).toLowerCase();
+/**
+ * Diagnose a Wget failure from its SEPARATE stdout and stderr tails.
+ *
+ * The text is drawn from both streams; stderr is the authoritative source for
+ * network-level diagnostics (DNS, connect, reset, TLS, redirects). The fallback
+ * never claims "without saving any files" — that decision is made by the caller
+ * from the real file count, not guessed here.
+ */
+function explainFailure(stdout, stderr, exitCode) {
+  const combine = (arr) => (Array.isArray(arr) ? arr.join('\n') : String(arr || ''));
+  const text = (combine(stdout) + '\n' + combine(stderr)).toLowerCase();
 
-  // Map common wget failure signatures to precise, user-facing messages.
-  if (/could not resolve|cannot resolve|failed to resolve|unable to resolve host|name or service not known|nxdomain/.test(text)) {
+  // DNS resolution failures.
+  if (/could not resolve|cannot resolve|failed to resolve|unable to resolve host|name or service not known|nxdomain|temporary failure in name resolution|not known/i.test(text)) {
     return 'The domain could not be resolved (DNS failure). Check the address and try again.';
   }
-  if (/unable to verify|self.signed|certificate|ssl|tls|alternative name|hostname mismatch/i.test(text)) {
-    return 'The site has an SSL/TLS certificate problem (expired, self-signed, or hostname mismatch).';
+  // TLS / certificate failures.
+  if (/unable to verify|self.signed|certificate|ssl|tls|alternative name|hostname mismatch|handshake failure|wrong version number/i.test(text)) {
+    return 'The site has an SSL/TLS certificate or handshake problem (expired, self-signed, or hostname mismatch).';
   }
-  if (/connection refused|connect failed|failed to connect|timed out.*connect/i.test(text)) {
+  // Connection refused.
+  if (/connection refused|connect failed|failed to connect|network is unreachable|no route to host/i.test(text)) {
     return 'The server refused the connection (connection refused). It may be down or blocking automated downloads.';
   }
+  // Connection reset / broken pipe / remote closed.
+  if (/connection reset|reset by peer|broken pipe|remote.*closed|connection aborted|econnreset|epipe/i.test(text)) {
+    return 'The connection was reset by the remote server while downloading resources.';
+  }
+  // IPv6-related failures.
+  if (/ipv6|address family|trying .*::|network.*unreachable/i.test(text)) {
+    return 'There was a network (IPv4/IPv6) connectivity failure while contacting the server.';
+  }
+  // HTTP 403 (bot blocking).
   if (/403|forbidden|not permitted|response 403/i.test(text)) {
     return 'The server returned HTTP 403 Forbidden — it is blocking automated downloads.';
   }
+  // HTTP 404.
   if (/404|not found|error 404/i.test(text)) {
     return 'The server returned HTTP 404 Not Found for the requested page.';
   }
+  // robots.txt.
   if (/robots|disallow/i.test(text)) {
     return 'The site\'s robots.txt prevents this path from being downloaded.';
   }
-  if (/timed out|giving up|timeout/i.test(text)) {
+  // Timeout / giving up.
+  if (/timed out|giving up|timeout|read timed out/i.test(text)) {
     return 'The download timed out or gave up while fetching resources.';
   }
   if (exitCode === 8) return 'The server refused some requests (it may block automated downloads).';
-  return 'wget exited with code ' + exitCode + ' without saving any files.';
+  return 'The download did not complete successfully (network error, exit code ' + String(exitCode) + ').';
 }
 
 /** Asynchronous count — no event-loop blocking. */
@@ -441,3 +492,4 @@ function removeJobDir(directory) {
 module.exports.isBlockedHost = isBlockedHost;
 module.exports.findBlockedIpInOutput = findBlockedIpInOutput;
 module.exports.parseTarget = parseTarget;
+module.exports.explainFailure = explainFailure;

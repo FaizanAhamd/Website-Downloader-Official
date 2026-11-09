@@ -169,6 +169,7 @@
     socket = window.io();
 
     socket.on(token, handleEvent);
+
     socket.on('disconnect', function () {
       // A temporary transport drop must NOT kill the download. The server keeps
       // the job running; we show "reconnecting" and rely on socket.io's
@@ -179,20 +180,22 @@
         if (cancelBtn) cancelBtn.disabled = true;
       }
     });
+
     socket.on('connect', function () {
       // On reconnect, ask the server for the job's authoritative state so the
       // UI can recover (completed/failed/converting/running) instead of being
-      // stuck on the stale error.
+      // stuck on the stale state.
       if (disconnectedOnce && token && !progressBlock.hidden) {
         socket.emit('sync', { token: token });
         if (cancelBtn) cancelBtn.disabled = false;
       }
     });
+
     socket.on('connect_error', function () {
       if (!progressBlock.hidden) {
         setStatus('Could not connect to the download engine. Retrying…');
       } else {
-        showFailure('Could not connect to the download engine. If this is a serverless deployment (e.g. Vercel), an external download worker must be configured before downloads can work.');
+        showFailure('Could not connect to the download engine. Please try again.');
       }
     });
 
