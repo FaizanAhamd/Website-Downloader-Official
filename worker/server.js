@@ -81,6 +81,8 @@ function applyEvent(job, payload) {
     } else {
       job.status = 'completed';
       job.completedAt = now();
+      console.log('[job ' + job.id + '] status=completed file=' + job.file +
+        ' files=' + job.files + ' url=/api/jobs/' + job.id + '/download');
     }
   } else if (payload.progress === 'Converting') {
     job.status = 'converting';
@@ -289,11 +291,12 @@ function createWorkerApp() {
     if (!resolved.startsWith(archiveDir + path.sep)) {
       return res.status(404).json({ error: 'bad path' });
     }
+    console.log('[job ' + job.id + '] download url=/api/jobs/' + job.id + '/download file=' + job.file);
     res.download(resolved, job.file, function (dlErr) {
-      if (dlErr) console.error('zip download failed:', job.file, dlErr.message);
+      if (dlErr) console.error('[job ' + job.id + '] download failed: ' + dlErr.message);
       fs.unlink(resolved, function (e) {
-        if (e && e.code !== 'ENOENT') console.error('unlink failed', e.message);
-        else if (!e) console.log('Deleted archive after download:', job.file);
+        if (e && e.code !== 'ENOENT') console.error('[job ' + job.id + '] unlink failed: ' + e.message);
+        else if (!e) console.log('[job ' + job.id + '] archive deleted after download: ' + job.file);
       });
     });
   });

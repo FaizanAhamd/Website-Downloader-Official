@@ -102,6 +102,7 @@ test('end-to-end job lifecycle (network): create -> poll -> completed -> downloa
   assert.strictEqual(state.status, 'completed', 'job failed: ' + JSON.stringify(state));
   assert.ok(state.files >= 1);
   assert.ok(state.file && state.file.endsWith('.zip'));
+  assert.strictEqual(state.downloadUrl, '/api/jobs/' + job.id + '/download');
 
   // Download the archive.
   const dl = await fetch(base + '/api/jobs/' + job.id + '/download', { headers: authHeaders() });

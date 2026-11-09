@@ -97,13 +97,18 @@
     setError(String(message));
   }
 
-  function showCompleted(file, files) {
+  function showCompleted(file, files, url) {
     hideProgress();
     downloadBtn.disabled = false;
     input.disabled = false;
     setFileCount(files || 0);
     zipNameEl.textContent = file || '';
-    if (file) {
+    if (file && url) {
+      zipBtn.href = url;
+      zipBtn.style.display = '';
+      zipBtn.setAttribute('download', file);
+    } else if (file) {
+      // Fallback for any consumer that only provides the file name.
       zipBtn.href = '/download/' + encodeURIComponent(file);
       zipBtn.style.display = '';
       zipBtn.setAttribute('download', file);
@@ -138,7 +143,7 @@
     if (!evt) return;
     if (evt.error) { showFailure(evt.error); return; }
     if (evt.progress === 'Completed') {
-      showCompleted(evt.file, evt.files);
+      showCompleted(evt.file, evt.files, evt.url);
       return;
     }
     if (evt.progress === 'Converting') {
@@ -160,17 +165,35 @@
       return;
     }
     token = 'dl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    var disconnectedOnce = false;
     socket = window.io();
 
     socket.on(token, handleEvent);
     socket.on('disconnect', function () {
-      // Only treat a disconnect as a failure if a download is still in flight.
+      // A temporary transport drop must NOT kill the download. The server keeps
+      // the job running; we show "reconnecting" and rely on socket.io's
+      // automatic reconnection + the 'sync' handshake to recover the state.
       if (!progressBlock.hidden) {
-        showFailure('Connection to the download engine was lost. Please try again.');
+        disconnectedOnce = true;
+        setStatus('Connection lost. Reconnecting…');
+        if (cancelBtn) cancelBtn.disabled = true;
+      }
+    });
+    socket.on('connect', function () {
+      // On reconnect, ask the server for the job's authoritative state so the
+      // UI can recover (completed/failed/converting/running) instead of being
+      // stuck on the stale error.
+      if (disconnectedOnce && token && !progressBlock.hidden) {
+        socket.emit('sync', { token: token });
+        if (cancelBtn) cancelBtn.disabled = false;
       }
     });
     socket.on('connect_error', function () {
-      showFailure('Could not connect to the download engine. If this is a serverless deployment (e.g. Vercel), an external download worker must be configured before downloads can work.');
+      if (!progressBlock.hidden) {
+        setStatus('Could not connect to the download engine. Retrying…');
+      } else {
+        showFailure('Could not connect to the download engine. If this is a serverless deployment (e.g. Vercel), an external download worker must be configured before downloads can work.');
+      }
     });
 
     showProgress();
@@ -193,7 +216,7 @@
       .then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.json(); })
       .then(function (job) {
         if (job.status === 'completed') {
-          showCompleted(job.file, job.files);
+          showCompleted(job.file, job.files, job.downloadUrl);
           return;
         }
         if (job.status === 'failed') { showFailure(job.error || 'Download failed.'); return; }

@@ -167,9 +167,13 @@ async function assertPublicHost(hostname) {
   return records.length > 0;
 }
 
-module.exports = (socket, data, onFinished) => {
+// Contract: the first argument is an emitter object exposing emit(token, payload)
+// (a Socket.IO socket, or the job-store adapter used by socket.js / the worker).
+// The engine never touches connection lifecycle — it only emits events and calls
+// onFinished() exactly once when the job settles.
+module.exports = (emitter, data, onFinished) => {
   const done = typeof onFinished === 'function' ? onFinished : function () {};
-  const send = (payload) => socket.emit(data.token, payload);
+  const send = (payload) => emitter.emit(data.token, payload);
 
   const target = parseTarget(data.website);
   if (!target) {
@@ -179,6 +183,9 @@ module.exports = (socket, data, onFinished) => {
   }
 
   const jobId = crypto.randomBytes(8).toString('hex');
+  // Prefer the client token (stable across reconnects) for correlation; fall
+  // back to the internal job id when no token is available (e.g. worker mode).
+  const jobRef = data && data.token ? data.token : jobId;
   const jobDir = path.join(DOWNLOAD_ROOT, jobId);
   try {
     fs.mkdirSync(jobDir, { recursive: true });
@@ -204,6 +211,7 @@ module.exports = (socket, data, onFinished) => {
     if (timer) clearTimeout(timer);
     if (watchdog) clearInterval(watchdog);
     removeJobDir(jobDir);
+    console.error('[job ' + jobRef + '] failed: ' + message);
     send({ error: message });
     done();
   };
@@ -229,6 +237,8 @@ module.exports = (socket, data, onFinished) => {
     args.push(target.href);
 
     child = spawn(WGET_PATH, args, { cwd: jobDir, stdio: ['ignore', 'pipe', 'pipe'] });
+    console.log('[job ' + jobRef + '] started target=' + target.href);
+
 
     timer = setTimeout(() => {
       timedOut = true;
@@ -317,13 +327,22 @@ module.exports = (socket, data, onFinished) => {
         currentArchive = null;
         removeJobDir(jobDir);
         if (cancelled) {
+          console.log('[job ' + jobRef + '] cancelled during archive finalization');
           done();
           return;
         }
         if (err) {
+          console.error('[job ' + jobRef + '] archive error: ' + err.message);
           send({ error: 'The site downloaded but could not be compressed: ' + err.message });
         } else {
-          send({ progress: 'Completed', file: name + '.zip', files: (info && info.fileCount) || fileCount });
+          const zipFile = name + '.zip';
+          const files = (info && info.fileCount) || fileCount;
+          const dlUrl = '/download/' + encodeURIComponent(zipFile);
+          console.log('[job ' + jobRef + '] archive ready file=' + zipFile +
+            ' files=' + files + ' url=' + dlUrl);
+          // Include an explicit download URL so both the classic UI and the job
+          // store can present a valid, ready-to-use link.
+          send({ progress: 'Completed', file: zipFile, files: files, url: dlUrl });
         }
         done();
       });
