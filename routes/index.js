@@ -13,6 +13,12 @@ try {
   console.error('Could not create archive directory:', err.message);
 }
 
+// Tracks how many clients are currently streaming a given ZIP. An archive is
+// only deleted after the LAST active download of it finishes, so two users
+// downloading the same file simultaneously cannot cause one to get a truncated
+// response because the other's completion removed the file from under them.
+var zipDownloadCounts = Object.create(null);
+
 function page(res, view, title, extra) {
   res.render(view, Object.assign({ title: title }, extra || {}));
 }
@@ -124,11 +130,18 @@ router.get('/download/:file', function (req, res, next) {
   var resolved = path.resolve(archiveDir, name);
   if (!resolved.startsWith(archiveDir + path.sep)) return next(createError(404));
 
+  // Only delete the archive once the last active download of it finishes.
+  zipDownloadCounts[name] = (zipDownloadCounts[name] || 0) + 1;
+
   res.download(resolved, name, function (dlErr) {
     if (dlErr) {
       console.error('ZIP download failed:', name, dlErr.message);
     }
-    // Best-effort cleanup on success and failure.
+
+    zipDownloadCounts[name] = Math.max(0, (zipDownloadCounts[name] || 1) - 1);
+    if (zipDownloadCounts[name] > 0) return; // another client is still streaming
+
+    delete zipDownloadCounts[name];
     fs.unlink(resolved, function (unlinkErr) {
       if (unlinkErr && unlinkErr.code !== 'ENOENT') {
         console.error('Could not delete archive:', name, unlinkErr.message);

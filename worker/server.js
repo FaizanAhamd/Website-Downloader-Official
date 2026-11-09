@@ -32,11 +32,12 @@ var path = require('path');
 var fs = require('fs');
 var crypto = require('crypto');
 var wget = require('../wget');
+var downloadCfg = require('../config').download;
 var createRateLimit = require('../lib/rate-limit');
 var clientIp = require('../lib/client-ip');
 
-var MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_DOWNLOADS) || 5;
-var TTL_MS = (Number(process.env.DOWNLOAD_ZIP_TTL_HOURS) || 24) * 3600 * 1000;
+var MAX_CONCURRENT = downloadCfg.maxConcurrent;
+var TTL_MS = downloadCfg.zipTtlHours * 3600 * 1000;
 var API_KEY = process.env.WORKER_API_KEY || '';
 var UPLOAD_URL = process.env.ARCHIVE_UPLOAD_URL || '';
 var CORS_ORIGINS = (process.env.WORKER_CORS_ORIGIN || '')
