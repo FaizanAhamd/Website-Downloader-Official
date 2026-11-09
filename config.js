@@ -114,7 +114,7 @@ module.exports = {
     maxRedirects: toPositiveInt(process.env.MAX_REDIRECTS, 10),
     // Recursion depth cap for the mirror (wget --level). 0 = infinity (use with
     // care); default 5 keeps large mirrors bounded.
-    maxCrawlDepth: toNonNegativeInt(process.env.MAX_CRAWL_DEPTH, 5),
+    maxCrawlDepth: toNonNegativeInt(process.env.MAX_CRAWL_DEPTH, 0),
     // When true, allow wget's --span-hosts so page requisites (CSS/images/fonts)
     // hosted on other domains (CDNs, subdomains) are fetched too. This is the
     // only mechanism that downloads cross-host resources; it is OFF by default
