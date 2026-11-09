@@ -56,17 +56,6 @@ See `.env.example` and `ENVIRONMENT_VARIABLES.md`. All settings are environment-
 
 Archives are written to a private folder (`private/archives/` by default) — never inside `public/`. They are deleted automatically after the configured retention period (`DOWNLOAD_ZIP_TTL_HOURS`, default 24 hours) and immediately after a successful download via the `/download/:file` route. Archive files are not served as public static assets.
 
-## Google AdSense
-
-AdSense is **disabled by default**. To enable it you must first verify the site with Google and configure ad units. See `ADSENSE_SETUP.md`. Ads are never placed next to the downloader controls.
-
-## Vercel deployment
-
-See `VERCEL_DEPLOYMENT.md`. The marketing/SEO pages can be served on Vercel. The long-running
-downloader engine cannot run inside a serverless function, so a separate always-on worker is
-provided (`worker/server.js`). The frontend automatically uses **worker polling mode** when
-`API_BASE_URL` is configured, and falls back to the classic Socket.IO mode otherwise.
-
 ## Technology stack
 
 - Node.js / Express 4 / Handlebars (`hbs`)
@@ -74,8 +63,3 @@ provided (`worker/server.js`). The frontend automatically uses **worker polling 
 - GNU Wget download engine + Archiver ZIP generation
 - Environment-driven configuration (`config.js`, `dotenv`)
 
-## Legal and attribution
-
-- Preserve the original project's MIT license and required copyright/permission notice (see `LICENSE.md`).
-- Review `THIRD_PARTY_NOTICES.md` and verify all dependency and bundled-binary licenses.
-- `views/privacy.hbs` and `views/terms.hbs` are drafts and require legal review before production.
