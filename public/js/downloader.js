@@ -59,6 +59,16 @@
     if (errorBanner) { errorBanner.hidden = true; errorMsg.textContent = ''; }
   }
 
+  /**
+   * Send a GA4 event (only when the global tag is present). No event carries any
+   * sensitive parameter — no URLs, tokens, emails, error strings or filenames.
+   * Consent filtering is handled by Google Consent Mode on the gtag side.
+   */
+  function trackEvent(eventName) {
+    if (typeof window.gtag !== 'function') return;
+    try { window.gtag('event', eventName); } catch (e) { /* never break the UI */ }
+  }
+
   function setStatus(text) {
     statusText.textContent = text;
     if (progressTrack) progressTrack.setAttribute('aria-valuenow', '0');
@@ -89,12 +99,14 @@
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  function showFailure(message) {
+  function showFailure(message, opts) {
     hideProgress();
     stopPolling();
     downloadBtn.disabled = false;
     input.disabled = false;
     setError(String(message));
+    // Track real download failures; a cancellation is not a failure.
+    if (!opts || opts.track !== false) trackEvent('download_failed');
   }
 
   function showCompleted(file, files, url) {
@@ -118,6 +130,8 @@
     successMsg.textContent = 'Your ZIP archive is ready.';
     resultFiles.textContent = (files || 0) + ' files collected. The archive is stored temporarily and removed after download.';
     resultBlock.hidden = false;
+    // Server has confirmed the archive is created and ready.
+    trackEvent('archive_ready');
   }
 
   function resetToIdle() {
@@ -223,7 +237,7 @@
           return;
         }
         if (job.status === 'failed') { showFailure(job.error || 'Download failed.'); return; }
-        if (job.status === 'cancelled') { showFailure('Download cancelled.'); return; }
+        if (job.status === 'cancelled') { showFailure('Download cancelled.', { track: false }); return; }
         if (job.status === 'converting') {
           showProgress();
           setStatus('Website download complete. Creating ZIP archive…');
@@ -272,6 +286,8 @@
     input.disabled = true;
 
     if (workerMode) { workerStart(raw); } else { socketStart(raw); }
+    // A valid download request was submitted.
+    trackEvent('download_started');
   }
 
   function submit() {
@@ -304,9 +320,17 @@
       } else if (socket) {
         try { socket.emit('cancel', { token: token }); } catch (e) { /* noop */ }
       }
+      trackEvent('download_cancelled');
       hideProgress();
       downloadBtn.disabled = false;
       input.disabled = false;
+    });
+  }
+
+  // A ZIP download click is a genuine user interaction.
+  if (zipBtn) {
+    zipBtn.addEventListener('click', function () {
+      trackEvent('zip_download_clicked');
     });
   }
 

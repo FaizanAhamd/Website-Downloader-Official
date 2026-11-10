@@ -35,6 +35,36 @@
   <!-- Google AdSense loader (only injected when verified & enabled via env) -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{config.adsense.clientId}}" crossorigin="anonymous"></script>
   {{/if}}
+
+  {{#if config.ga.measurementId}}
+  <!-- Google Analytics 4 — loaded asynchronously, only when GA_MEASUREMENT_ID is set.
+       Consent Mode v2: analytics storage is denied by default until the visitor
+       accepts in the consent banner. Rejecting keeps analytics disabled. -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'granted',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500
+    });
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      var f = d.getElementsByTagName(s)[0];
+      var j = d.createElement(s);
+      var dl = l !== 'dataLayer' ? '&l=' + l : '';
+      j.async = true;
+      j.src = 'https://www.googletagmanager.com/gtag/js?id=' + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', '{{config.ga.measurementId}}');
+    gtag('js', new Date());
+    gtag('config', '{{config.ga.measurementId}}');
+  </script>
+  {{/if}}
 </head>
 <body>
 
@@ -146,5 +176,69 @@
       });
     })();
   </script>
+
+  {{#if config.ga.measurementId}}
+  <!-- Analytics consent banner (Google Consent Mode v2). Only rendered when GA4
+       is configured. No analytics storage is used until the visitor explicitly
+       accepts; rejecting disables analytics tracking. -->
+  <div id="consent-banner" role="dialog" aria-live="polite" aria-label="Analytics consent"
+       style="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#0b1f3a;color:#fff;padding:14px 20px;font-size:14px;display:none;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;box-shadow:0 -2px 12px rgba(0,0,0,.2);">
+    <span style="max-width:720px;">
+      This site uses Google Analytics to understand how visitors use it. Analytics
+      cookies and identifiers are only used if you accept.
+      <a href="/privacy" style="color:#7fb3ff;text-decoration:underline;">Privacy Policy</a>.
+    </span>
+    <span style="display:flex;gap:10px;">
+      <button type="button" id="consent-reject"
+              style="background:transparent;color:#fff;border:1px solid #7fb3ff;border-radius:8px;padding:8px 16px;cursor:pointer;">Reject</button>
+      <button type="button" id="consent-accept"
+              style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:600;">Accept</button>
+    </span>
+  </div>
+  <script>
+    (function () {
+      if (typeof gtag !== 'function') return; // GA not configured
+      var KEY = 'wd_analytics_consent';
+      var banner = document.getElementById('consent-banner');
+      var saved = null;
+      try { saved = localStorage.getItem(KEY); } catch (e) { saved = null; }
+      function applyConsent(state) {
+        if (state === 'granted') {
+          gtag('consent', 'update', {
+            'ad_storage': 'granted',
+            'analytics_storage': 'granted',
+            'functionality_storage': 'granted',
+            'personalization_storage': 'granted',
+            'security_storage': 'granted'
+          });
+        } else {
+          gtag('consent', 'update', {
+            'ad_storage': 'denied',
+            'analytics_storage': 'denied',
+            'functionality_storage': 'granted',
+            'personalization_storage': 'denied',
+            'security_storage': 'granted'
+          });
+        }
+      }
+      function showBanner() { if (banner) banner.style.display = 'flex'; }
+      function hideBanner() { if (banner) banner.style.display = 'none'; }
+      function choose(state) {
+        applyConsent(state);
+        try { localStorage.setItem(KEY, state); } catch (e) {}
+        hideBanner();
+      }
+      if (saved === 'granted') { applyConsent('granted'); }
+      else if (saved === 'denied') { applyConsent('denied'); }
+      else { showBanner(); }
+      if (banner) {
+        var accept = document.getElementById('consent-accept');
+        var reject = document.getElementById('consent-reject');
+        if (accept) accept.addEventListener('click', function () { choose('granted'); });
+        if (reject) reject.addEventListener('click', function () { choose('denied'); });
+      }
+    })();
+  </script>
+  {{/if}}
 </body>
 </html>

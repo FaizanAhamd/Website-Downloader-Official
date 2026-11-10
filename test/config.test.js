@@ -15,7 +15,7 @@ const DOWNLOAD_ENV_KEYS = [
   'DOWNLOAD_QUOTA', 'DOWNLOAD_TIMEOUT_MS', 'DOWNLOAD_WATCHDOG_MS',
   'MAX_CONCURRENT_DOWNLOADS', 'MAX_REDIRECTS', 'MAX_CRAWL_DEPTH',
   'ALLOW_CROSS_HOST_REQUISITES', 'DOWNLOAD_ZIP_TTL_HOURS', 'WGET_PATH',
-  'ARCHIVE_DIR',
+  'ARCHIVE_DIR', 'GA_MEASUREMENT_ID',
 ];
 
 function loadConfig(env) {
@@ -55,7 +55,7 @@ test('download defaults match the documented safe limits', () => {
   assert.strictEqual(c.download.watchdogMs, 2000);
   assert.strictEqual(c.download.maxConcurrent, 5);
   assert.strictEqual(c.download.maxRedirects, 10);
-  assert.strictEqual(c.download.maxCrawlDepth, 5);
+  assert.strictEqual(c.download.maxCrawlDepth, 0); // documented default: 0 = unlimited
   assert.strictEqual(c.download.allowCrossHostRequisites, false);
   assert.strictEqual(c.download.zipTtlHours, 24);
 });
@@ -75,4 +75,12 @@ test('download settings honor valid overrides and reject invalid ones', () => {
   assert.strictEqual(c.download.maxCrawlDepth, 7);
   assert.strictEqual(c.download.maxConcurrent, 5); // invalid -> fallback
   assert.strictEqual(c.download.allowCrossHostRequisites, true);
+});
+
+test('GA4 is disabled by default and enabled only when measurement id is set', () => {
+  const noGa = loadConfig({});
+  assert.strictEqual(noGa.ga.measurementId, '');
+
+  const withGa = loadConfig({ GA_MEASUREMENT_ID: 'G-YS448FDDN0' });
+  assert.strictEqual(withGa.ga.measurementId, 'G-YS448FDDN0');
 });

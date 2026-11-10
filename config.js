@@ -97,6 +97,14 @@ module.exports = {
     },
   },
 
+  // Google Analytics 4 integration (Consent Mode v2).
+  // All tracking is DISABLED unless GA_MEASUREMENT_ID is set. The Measurement ID
+  // is public by design (it ships with the gtag snippet in <head>), but no other
+  // private environment variables are ever exposed to the browser.
+  ga: {
+    measurementId: process.env.GA_MEASUREMENT_ID || '',
+  },
+
   download: {
     // Size ceiling passed to wget. Kept as the human-readable string for logs
     // and error messages; `quotaBytes` is the parsed byte count used by the
