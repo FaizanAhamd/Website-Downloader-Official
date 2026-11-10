@@ -6,6 +6,56 @@ var config = require('../config');
 var guides = require('../data/guides');
 var router = express.Router();
 
+// Per-page SEO metadata. Each public page gets a unique description and its
+// own canonical path (the full canonical URL is assembled from
+// config.brand.siteUrl + path in the layout). Fallbacks keep pages safe even if
+// a page is missing from this map.
+var DEFAULT_META_DESCRIPTION =
+  'Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive with Website Downloader.';
+
+var SEO_META = {
+  index: {
+    description: 'Download any public website online as a ZIP. Mirror entire sites for offline browsing with this free website downloader and website mirroring tool.',
+    canonical: '/',
+  },
+  about: {
+    description: 'Learn about Website Downloader, the free online tool to download an entire website for offline browsing and save it as a ZIP archive.',
+    canonical: '/about',
+  },
+  features: {
+    description: 'Explore Website Downloader features: download entire websites, mirror static resources, save websites as ZIP, with real-time progress.',
+    canonical: '/features',
+  },
+  'how-it-works': {
+    description: 'See how to download a website for offline browsing in three simple steps with Website Downloader, the free website mirroring tool.',
+    canonical: '/how-it-works',
+  },
+  guides: {
+    description: 'Read Website Downloader guides on how to download an entire website, mirror sites for offline browsing, and save a website as a ZIP archive.',
+    canonical: '/guides',
+  },
+  guide: {
+    description: 'Step-by-step guide to downloading a website for offline browsing with Website Downloader, the free website mirroring and save-as-ZIP tool.',
+    canonical: '/guides',
+  },
+  faq: {
+    description: 'Frequently asked questions about Website Downloader: downloading entire websites, website mirroring, and saving websites as ZIP files.',
+    canonical: '/faq',
+  },
+  contact: {
+    description: 'Contact the Website Downloader team about the free website downloader, website mirroring tool and saving websites as ZIP archives.',
+    canonical: '/contact',
+  },
+  privacy: {
+    description: 'Privacy policy for Website Downloader, the free online website downloader that mirrors websites for offline browsing and saves them as ZIP.',
+    canonical: '/privacy',
+  },
+  terms: {
+    description: 'Terms of service for Website Downloader, the free website downloader and mirroring tool for downloading entire websites as ZIP archives.',
+    canonical: '/terms',
+  },
+};
+
 // Guarantee the private archive directory exists (fresh clones start empty).
 try {
   fs.mkdirSync(path.resolve(config.download.archiveDir), { recursive: true });
@@ -19,8 +69,13 @@ try {
 // response because the other's completion removed the file from under them.
 var zipDownloadCounts = Object.create(null);
 
-function page(res, view, title, extra) {
-  res.render(view, Object.assign({ title: title }, extra || {}));
+function page(res, view, title, extra, canonicalOverride) {
+  var seo = SEO_META[view] || {};
+  var meta = {
+    description: seo.description || DEFAULT_META_DESCRIPTION,
+    canonical: canonicalOverride || seo.canonical || '',
+  };
+  res.render(view, Object.assign({ title: title, meta: meta }, extra || {}));
 }
 
 /* ---------------- Public marketing pages ---------------- */
@@ -51,7 +106,7 @@ router.get('/guides/:slug', function (req, res, next) {
   page(res, 'guide', guide.title + ' - Website Downloader', {
     guide: guide,
     related: guides.related(guide.slug),
-  });
+  }, '/guides/' + guide.slug);
 });
 
 router.get('/faq', function (req, res, next) {

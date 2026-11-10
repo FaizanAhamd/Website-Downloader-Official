@@ -43,6 +43,11 @@ module.exports = {
     contactEmail: process.env.PUBLIC_CONTACT_EMAIL || 'faizanraki42@gmail.com',
     businessAddress: process.env.PUBLIC_BUSINESS_ADDRESS || '',
     siteUrl: process.env.PUBLIC_SITE_URL || '', // optional canonical/OG
+    // Normalized base URL without a trailing slash, used to assemble canonical
+    // and OG URLs. Empty when no public domain is configured.
+    get baseUrl() {
+      return (this.siteUrl || '').replace(/\/$/, '');
+    },
   },
 
   host: {

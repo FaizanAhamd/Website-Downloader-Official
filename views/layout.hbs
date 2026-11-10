@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <title>{{title}}</title>
-  <meta name="description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive with Website Downloader." />
+  <meta name="description" content="{{meta.description}}" />
   <meta name="author" content="{{config.brand.owner}}" />
   <meta name="robots" content="index, follow" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -15,14 +15,46 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="{{config.brand.name}}" />
   <meta property="og:title" content="{{title}}" />
-  <meta property="og:description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive." />
-  <meta property="og:image" content="{{#if config.brand.siteUrl}}{{config.brand.siteUrl}}/favicon.svg{{/if}}" />
+  <meta property="og:description" content="{{meta.description}}" />
+  <meta property="og:image" content="{{#if config.brand.siteUrl}}{{config.brand.baseUrl}}/favicon.svg{{/if}}" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="{{title}}" />
-  <meta name="twitter:description" content="Mirror publicly accessible web pages and their linked resources. Download the collected files in one convenient ZIP archive." />
+  <meta name="twitter:description" content="{{meta.description}}" />
   {{#if config.brand.siteUrl}}
-  <meta property="og:url" content="{{config.brand.siteUrl}}" />
-  <link rel="canonical" href="{{config.brand.siteUrl}}" />
+  <meta property="og:url" content="{{config.brand.baseUrl}}{{meta.canonical}}" />
+  <link rel="canonical" href="{{config.brand.baseUrl}}{{meta.canonical}}" />
+  {{/if}}
+
+  <!-- Structured data: WebSite + SoftwareApplication (only when a domain is configured) -->
+  {{#if config.brand.siteUrl}}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "{{config.brand.name}}",
+    "url": "{{config.brand.baseUrl}}",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "{{config.brand.baseUrl}}/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "{{config.brand.name}}",
+    "applicationCategory": "WebApplication",
+    "operatingSystem": "Web",
+    "url": "{{config.brand.baseUrl}}",
+    "description": "{{meta.description}}",
+    "publisher": {
+      "@type": "Organization",
+      "name": "{{config.brand.owner}}"
+    }
+  }
+  </script>
   {{/if}}
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
